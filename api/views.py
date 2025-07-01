@@ -4,6 +4,7 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, action
+from rest_framework.parsers import MultiPartParser, FormParser
 from api.models import (
     CarImage, 
     Car, 
@@ -17,7 +18,10 @@ from api.serializers import (
     CarSerializer, 
     ReviewSerializer, 
 )
+from api.filters import CarFilter
 from django.contrib.auth import get_user_model
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 
 
 
@@ -90,6 +94,9 @@ class CarViewSet(viewsets.ModelViewSet):
     queryset = Car.objects.all()
     serializer_class = CarSerializer
     permission_classes = [IsOwnerOrReadOnly,]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = CarFilter
+    search_fields = ['location', 'car_model', 'description', 'price_per_day',]
 
     # set car.owner to current user when creating Car object
     def perform_create(self, serializer):
@@ -106,6 +113,7 @@ class CarImageListCreateView(generics.ListCreateAPIView):
     """
     serializer_class = CarImageSerializer
     permission_classes = [IsCarOwner]
+    parser_classes = [MultiPartParser, FormParser]
 
     # return all images for car.id
     def get_queryset(self):
@@ -117,7 +125,8 @@ class CarImageListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         pk = self.kwargs["pk"]
         car = get_object_or_404(Car, pk=pk)
-        serializer.save(car=car)
+        is_thumbnail = not CarImage.objects.filter(car=car).exists()
+        serializer.save(car=car, is_thumbnail=is_thumbnail)
 
 
 class CarImageDeleteView(generics.DestroyAPIView):

@@ -1,6 +1,7 @@
 from .models import CarImage, Car, Review
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 
 
 
@@ -34,20 +35,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CarImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=True)
 
     class Meta:
         model = CarImage
         fields = ['id','uploaded_at', 'car', 'image', 'is_thumbnail',]
-        read_only_fields = ['id', 'uploaded_at',]
+        read_only_fields = ['id', 'uploaded_at','car','is_thumbnail',]
 
 
 class CarSerializer(serializers.ModelSerializer):
-    images = CarImageSerializer(many=True)
+    images = CarImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Car
         fields = "__all__"
-        read_only_fields = ['owner','created_at',]
+        read_only_fields = ['owner','created_at','images',]
 
 
 class ReviewSerializer(serializers.ModelSerializer):
